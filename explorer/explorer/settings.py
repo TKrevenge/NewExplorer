@@ -19,6 +19,7 @@ PROJECT_ROOT = os.path.join(BASE_DIR, "explorer")
 
 # Add the individual app package path
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "apps"))
+sys.path.insert(0, os.path.join(PROJECT_ROOT, "config"))
 sys.path.insert(0, PROJECT_ROOT)
 
 # Quick-start development settings - unsuitable for production
@@ -91,6 +92,6 @@ LOCALE_PATHS = (
 TEMPLATE_DIRS = [os.path.join(PROJECT_ROOT, "templates")]
 
 try:
-    from settings_local import *
-except Exception, inst:
-    print inst
+    from .settings_local import *
+except Exception as inst:
+    print(inst)
