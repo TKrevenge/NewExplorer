@@ -1022,6 +1022,10 @@ def api_show_client_transactions(request, version):
                     item['to_address'] = addr_translation.address_encode(item['to_address'])
                 if item.get('from_address', None):
                     item['from_address'] = addr_translation.address_encode(item['from_address'])
+                if item.get('to', None):
+                    item['to'] = addr_translation.address_encode(item['to'])
+                if item.get('from_address', None):
+                    item['from'] = addr_translation.address_encode(item['from'])
             item['confirmations'] = current_height - obj.blockheight
             txs.append(item)
         result = {
