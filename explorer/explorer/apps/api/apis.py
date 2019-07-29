@@ -328,6 +328,7 @@ def api_show_transaction_list(request, version):
     """
     try:
         # handle the query parameters
+        get_new_status_info(request)
         trans_date = request.GET.get('transDate')
         start_ts = request.GET.get('startTimestamp')
         timezone = int(request.GET.get('timezone', 0))
@@ -979,6 +980,8 @@ def api_show_client_transactions(request, version):
         addr = request.GET.get('addr')
         if not addr:
             addr = request.GET.get('address')
+        if addr[0:3] == 'NEW':
+            addr = addr_translation.b58check_decode(addr)
         page_id = int(request.GET.get('pageNum', 1))
         #if page_id > settings.MAX_PAGE_NUM:
         #    page_id = settings.MAX_PAGE_NUM
@@ -1014,6 +1017,11 @@ def api_show_client_transactions(request, version):
         current_height = provider_services.get_current_height()
         for obj in objs:
             item = __convert_transaction_to_client_json(obj)
+            if item:
+                if item.get('to_address', None):
+                    item['to_address'] = addr_translation.address_encode(item['to_address'])
+                if item.get('from_address', None):
+                    item['from_address'] = addr_translation.address_encode(item['from_address'])
             item['confirmations'] = current_height - obj.blockheight
             txs.append(item)
         result = {
@@ -1178,4 +1186,28 @@ def api_home_brief(request, version):
         return http.JsonResponse(result)
     except Exception, inst:
         logger.exception("fail to get home page brief:%s" % str(inst))
+        return http.HttpResponseServerError()
+
+
+def get_new_status_info(request):
+    try:
+        datetime_timestamp_list = []
+        datetime_str_list = []
+        txn_list = []
+        address_list = []
+        today = datetime.date.today()
+        today_timestamp = int(time.mktime(today.timetuple()))
+        datetime_timestamp_list.append(today_timestamp)
+        for i in range(14):
+            # day = today - datetime.timedelta(days=i)
+            # day_timestamp = int(time.mktime(day.timetuple()))
+            day_timestamp = datetime_timestamp_list[i] - 86400
+            datetime_timestamp_list.append(day_timestamp)
+            datetime_str_list.append(datetime.datetime.fromtimestamp(day_timestamp).strftime('%Y-%m-%d'))
+            txn = provider_models.Transaction.objects.filter(time__gte=day_timestamp, time__lt=day_timestamp+86400).count()
+            txn_list.append(txn)
+            address = provider_models.Address.objects.filter(time__lt=day_timestamp+86400).count()
+            address_list.append(address)
+    except Exception, inst:
+        logger.exception("fail to get new_status info:%s" % str(inst))
         return http.HttpResponseServerError()
